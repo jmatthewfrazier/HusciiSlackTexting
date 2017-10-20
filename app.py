@@ -1,40 +1,21 @@
-import os
-from slackclient import SlackClient
-SLACK_TOKEN = os.environ.get('SLACK_TOKEN')
-slack_client = SlackClient(SLACK_TOKEN)
+from twilio.rest import Client
+from flask import Flask, request
+from flask_slack import Slack
 
-def list_channels():
-	channels_call = slack_client.api_call("channels.list")
-	if (channels_call.get('ok')):
-		return channels_call['channels']
+app = Flask(__name__)
+slack = Slack(app)
+account_sid = "AC036c070d9956779506ebc5c01e3dcb2c"
+auth_token = "b4078883c04623b7f15dfd75b92ceba2"
 
-	return None
+client = Client(account_sid, auth_token)
 
-def channel_info(channel_id):
-	channel_info = slack_client.api_call("channels.info", channel=channel_id)
-	if channel_info:
-		return channel_info['channel']
-	return None
-
-def send_message(channel_id, message):
-	slack_client.api_call(
-		"chat.postMessage",
-		channel=channel_id,
-		text=message,
-		username='EventBot',
-		icon_emoji=':robot_face:')
+@app.route('/text', methods=['POST', 'GET'])
+def send(**args):
+	print(args.get('text'))
+	client.messages.create(
+		to="+12535145920", from_="+12532011626",
+		body="Hello there")
+	return args.get('text')
 
 if __name__ == '__main__':
-	channels = list_channels()
-	if channels:
-		print("Channels: ")
-		for channel in channels:
-			print(channel['name'] + " (" + channel['id']+ ")")
-			detailed_info = channel_info(channel['id'])
-			if detailed_info:
-				print(detailed_info['latest']['text'])
-			if channel['name'] == 'general':
-				send_message(channel['id'], "New Event somewhere at sometime!")
-		print('-----')
-	else:
-		print("Unable to authenticate")
+	app.run()
